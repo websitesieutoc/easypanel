@@ -1,4 +1,4 @@
-name: Main
+name: CI tasks
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,29 +11,38 @@ permissions:
 on:
   push:
     branches:
-      - main
+      - master
 
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build-test:
-    name: 📚 Main
-    runs-on: ${{ matrix.os }}
+    name: Lint, Type check and Testings
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       matrix:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
-
-      - run: corepack enable
-      - uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
-          cache: pnpm
+          fetch-depth: 2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
@@ -43,11 +52,6 @@ jobs:
 
       - name: 👀 Lint
         run: pnpm lint:ci
-
-      # - name: 🧪 Test
-      #   run: pnpm test
-      #   env:
-      #     VITE_TEST_DB_URL: ${{ secrets.VITE_TEST_DB_URL }}
 
       - name: 🧪 Test with coverage
         run: pnpm coverage
